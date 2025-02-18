@@ -52,20 +52,31 @@ export const deleteAccount = async (id) => {
 };
 
 export const renewAccount = async (account) => {
-  const currentRenewalDate = new Date(account.renewalDate);
-  const nextRenewalDate = new Date(currentRenewalDate);
-  nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
-  
-  const updatedData = {
-    lastRenewalDate: account.renewalDate,
-    renewalDate: nextRenewalDate.toISOString().split('T')[0]
-  };
+  try {
+    if (!account || !account.id) {
+      throw new Error('Invalid account data');
+    }
 
-  const accountRef = doc(db, 'netflix-accounts', id);
-  await updateDoc(accountRef, updatedData);
-  
-  return {
-    ...account,
-    ...updatedData
-  };
-};
+    const currentRenewalDate = new Date(account.renewalDate);
+    const nextRenewalDate = new Date(currentRenewalDate);
+    nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+    
+    const updatedData = {
+      lastRenewalDate: account.renewalDate,
+      renewalDate: nextRenewalDate.toISOString().split('T')[0]
+    };
+
+    // Fixed: Using account.id instead of undefined id
+    const accountRef = doc(db, 'netflix-accounts', account.id);
+    await updateDoc(accountRef, updatedData);
+    
+    // Return the complete updated account object
+    return {
+      ...account,
+      ...updatedData
+    };
+  } catch (error) {
+    console.error('Error in renewAccount:', error);
+    throw new Error(`Failed to renew account: ${error.message}`);
+  }
+}
